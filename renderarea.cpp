@@ -9,6 +9,10 @@ RenderArea::RenderArea(RenderThread *renderer, QWidget *parent) : QWidget(parent
     m_renderer = renderer;
     elapsed = 0;
     m_pDragShape = NULL;
+
+    FPS = 0;
+    m_fps_cnt = 0;
+    m_fps_timer.start();
 }
 
 void RenderArea::animate()
@@ -38,9 +42,11 @@ void RenderArea::paintEvent(QPaintEvent *event)
     painter.begin(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    painter.fillRect(rect(), Qt::darkGray);
+    painter.save();
+    //painter.fillRect(rect(), Qt::gray);
 
     std::map<quint64, Shape*> *objects = m_renderer->lockData();
+    int count = objects->size();
     for(obj_it iterator = objects->begin(); iterator != objects->end(); iterator++)
     {
         //quint64 key = iterator->first;
@@ -48,6 +54,23 @@ void RenderArea::paintEvent(QPaintEvent *event)
         obj->draw(&painter);
     }
     m_renderer->unlockData();
+
+    m_fps_cnt++;
+    quint64 time = m_fps_timer.elapsed();
+
+    if(time > 1000)
+    {
+        FPS = m_fps_cnt;
+        m_fps_cnt = 0;
+        m_fps_timer.restart();
+    }
+    painter.restore();
+    painter.setFont(QFont("Courier", 14));
+    painter.drawText(30, 30,
+                     QString("Count: %1  ").arg(count) +
+                     QString("FPS: %1").arg(FPS) +
+                     QString("  Author: ANDREEV A.A."));
+
     painter.end();
 }
 

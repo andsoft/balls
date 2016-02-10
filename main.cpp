@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.showMaximized();
 
-    w.addObjects(2);
+    w.addObjects(5);
 
     return a.exec();
 }

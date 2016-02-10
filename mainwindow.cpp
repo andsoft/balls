@@ -20,9 +20,10 @@ MainWindow::MainWindow(QWidget *parent) :
     setCentralWidget(wnd);
 
     QTimer *timer = new QTimer(this);
+    timer->setTimerType(Qt::PreciseTimer);
     connect(timer, SIGNAL(timeout()), wnd, SLOT(animate()));
 
-    timer->start(10);
+    timer->start(40);
 
 
 }
@@ -38,13 +39,26 @@ void MainWindow::addObjects(int N)
 {
     for(int i=0; i<N; i++)
     {
-        for(int j=0; j<N; j++)
-        m_renderer->addObject(new Circle(/*randInt(10,1000)*/200+40*j, 200+40*i, ""));
+        m_renderer->addObject(new Circle(randInt(300,1000)/*200+50*i*/, 200+50*i, ""));
     }
 }
 
 int MainWindow::randInt(int low, int high)
 {
-    // Random number between low and high
     return qrand() % ((high + 1) - low) + low;
+}
+
+void MainWindow::on_actionClear_triggered()
+{
+    m_renderer->removeAllObjects();
+}
+
+void MainWindow::on_actionAdd_10_triggered()
+{
+    addObjects(10);
+}
+
+void MainWindow::on_actionAdd_100_triggered()
+{
+    addObjects(100);
 }

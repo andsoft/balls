@@ -26,6 +26,13 @@ protected:
 protected:
     RenderThread *m_renderer;
 
+private slots:
+    void on_actionClear_triggered();
+
+    void on_actionAdd_10_triggered();
+
+    void on_actionAdd_100_triggered();
+
 private:
     Ui::MainWindow *ui;
 };

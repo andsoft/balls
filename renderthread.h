@@ -22,6 +22,7 @@ public:
     void stopProcess();
 
     // public interface for interacting with the "world"
+    void removeAllObjects();
     void addObject(Shape* obj);
     void delObject(quint64 objId);
     Shape* getObject(quint64 objId);

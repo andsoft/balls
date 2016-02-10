@@ -81,8 +81,8 @@ void Circle::draw(QPainter * painter)
     QPen g_pen(QColor(0, 0, 0, 0));
         g_pen.setWidth(0);
         QRadialGradient grad(x, y, 40/2, x+5, y+5); // Create Gradient
-        grad.setColorAt(1, QColor(200, 200, 0)); // Black, varying alpha
-        grad.setColorAt(0, QColor(255, 255, 0)); // Black, completely transparent
+        grad.setColorAt(1, QColor(30, 30, 30)); // Black, varying alpha
+        grad.setColorAt(0, QColor(255, 255, 250)); // Black, completely transparent
         QBrush g_brush(grad); // Gradient QBrush
         painter->setPen(g_pen);
         painter->setBrush(g_brush);

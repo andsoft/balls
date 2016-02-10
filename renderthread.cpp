@@ -35,6 +35,13 @@ void RenderThread::stopProcess()
     qDebug("execution stoped ");
 }
 
+void RenderThread::removeAllObjects()
+{
+    m_mutex.lock();
+    m_objects.clear(); // TODO free memory
+    m_mutex.unlock();
+}
+
 void RenderThread::addObject(Shape* obj)
 {
     qDebug("Add object");
@@ -101,7 +108,7 @@ void RenderThread::run()
         //qDebug() << "Calculate stop" ;
         //m_mutex.unlock();
         //qDebug() << "Calculate stop2" ;
-        msleep(10);
+        msleep(1);
 
     }
     qDebug("thread exit");
@@ -210,14 +217,14 @@ void RenderThread::calculateForce(Shape* obj)
 
 
         // get offset
-        double factor = (Fcur*0.5 / (r_c));//
+        double factor = (Fcur*1 / (r_c));//
         Fx += factor * dx;
         Fy += factor * dy;
         //qDebug() << "Force: " << obj << r << Fcur << factor << Fx << Fy ;
         }
 
     }
-
+//qDebug() << "Force: " << obj << Fx << Fy ;
     obj->setForce(Fx, Fy, 0);
 }
 

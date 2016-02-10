@@ -7,6 +7,7 @@
 #include <QList>
 #include <QPainter>
 #include <QMouseEvent>
+#include <QElapsedTimer>
 
 #include "renderthread.h"
 
@@ -34,6 +35,10 @@ private:
     int elapsed;
 
     Shape* m_pDragShape;
+
+    int FPS;
+    QElapsedTimer m_fps_timer;
+    int m_fps_cnt;
 };
 
 #endif // RENDERAREA_H
