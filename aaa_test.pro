@@ -15,12 +15,12 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     renderarea.cpp \
-    shape.cpp \
-    renderthread.cpp
+    renderthread.cpp \
+    circle.cpp
 
 HEADERS  += mainwindow.h \
     renderarea.h \
-    shape.h \
-    renderthread.h
+    renderthread.h \
+    circle.h
 
 FORMS    += mainwindow.ui

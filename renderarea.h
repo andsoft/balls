@@ -1,7 +1,7 @@
 #ifndef RENDERAREA_H
 #define RENDERAREA_H
 
-#include "shape.h"
+#include "circle.h"
 
 #include <QWidget>
 #include <QList>
@@ -20,7 +20,6 @@ public:
 signals:
 
 public slots:
-    void animate();
 
 protected:
     void resizeEvent(QResizeEvent * event);
@@ -31,10 +30,10 @@ protected:
 
 private:
     RenderThread *m_renderer;
-    QList<Shape*> m_shapes;
+    QList<Circle*> m_Circles;
     int elapsed;
 
-    Shape* m_pDragShape;
+    Circle* m_pDragCircle;
 
     int FPS;
     QElapsedTimer m_fps_timer;

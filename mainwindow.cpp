@@ -14,24 +14,13 @@ MainWindow::MainWindow(QWidget *parent) :
     qsrand((uint)time.msec());
 
     m_renderer = new RenderThread(this);
-    m_renderer->startProcess();
 
     RenderArea* wnd = new RenderArea(m_renderer, this);
     setCentralWidget(wnd);
-
-    QTimer *timer = new QTimer(this);
-    timer->setTimerType(Qt::PreciseTimer);
-    connect(timer, SIGNAL(timeout()), wnd, SLOT(animate()));
-
-    timer->start(40);
-
-
 }
 
 MainWindow::~MainWindow()
 {
-    m_renderer->stopProcess();
-
     delete ui;
 }
 
@@ -39,7 +28,9 @@ void MainWindow::addObjects(int N)
 {
     for(int i=0; i<N; i++)
     {
-        m_renderer->addObject(new Circle(randInt(300,1000)/*200+50*i*/, 200+50*i));
+        QRect rect = centralWidget()->rect();
+        m_renderer->addObject(new Circle(randInt(20,rect.width()-20)/*200+50*i*/,
+                                         randInt(20,rect.height()-20)/*200+50*i*/));
     }
 }
 
@@ -61,4 +52,15 @@ void MainWindow::on_actionAdd_10_triggered()
 void MainWindow::on_actionAdd_100_triggered()
 {
     addObjects(100);
+}
+
+void MainWindow::on_slider_Speed_valueChanged(int value)
+{
+    double v = value;
+    m_renderer->setSpeed(v/50);
+}
+
+void MainWindow::on_slider_Scale_valueChanged(int value)
+{
+    m_renderer->setScale(value);
 }

@@ -1,16 +1,15 @@
 #ifndef RENDERTHREAD_H
 #define RENDERTHREAD_H
 
-#include "shape.h"
+#include "circle.h"
 
 #include <QThread>
 #include <map>
 #include <mutex>
 #include <atomic>
 
-#define BAD_ID 0
 
-typedef std::list<Shape*>::iterator obj_it;
+typedef std::list<Circle*>::iterator obj_it;
 
 class RenderThread : public QThread
 {
@@ -26,13 +25,17 @@ public:
 
     // public interface for interacting with the "world"
     void removeAllObjects();
-    void addObject(Shape* obj);
-    void delObject(Shape* obj);
+    void addObject(Circle* obj);
+    void delObject(Circle* obj);
 
-    std::list<Shape*> * lockData();
+    std::list<Circle*> * lockData();
     void unlockData();
 
-    Shape* hitTest(QPoint point, bool bLock = false);
+    Circle* hitTest(QPoint point, bool bLock = false);
+
+    // customization
+    void setScale(int scale);       // r-axis resolution in pixels
+    void setSpeed(double speed);    // speed
 
 signals:
 
@@ -42,18 +45,21 @@ protected:
     virtual void run();
 
     void applyForces();
-    void calculateForce(Shape* obj);
-    void collision(Shape* obj);
+    void calculateForce(Circle* obj);
+    void collision(Circle* obj);
 
     unsigned long long getTickCount();
 
 private:
-    std::list<Shape*> m_objects;
+    std::list<Circle*> m_objects;
 
     std::atomic<bool>  m_abort;
     std::mutex m_mutex;
 
     std::atomic<unsigned long long> m_calcTime;
+
+    int m_scale;
+    double m_speed;
 };
 
 #endif // RENDERTHREAD_H

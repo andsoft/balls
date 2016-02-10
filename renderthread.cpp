@@ -2,10 +2,18 @@
 
 #include <QDebug>
 
+#define R_SCALE 20  // scale
+#define SPEED   1.0  // speed
+
 RenderThread::RenderThread(QObject *parent) : QThread(parent)
 {
     m_abort = false;
     m_calcTime = 0;
+
+    m_scale = R_SCALE;
+    m_speed = SPEED;
+
+    startProcess();
 }
 
 RenderThread::~RenderThread()
@@ -23,7 +31,6 @@ void RenderThread::startProcess()
 
 void RenderThread::stopProcess()
 {
-    qDebug("execution stoping ");
     m_abort.store(true);
     wait();
     qDebug("execution stoped ");
@@ -32,44 +39,42 @@ void RenderThread::stopProcess()
 void RenderThread::removeAllObjects()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
-    for(Shape *obj : m_objects)
+    for(Circle *obj : m_objects)
         delete obj;
     m_objects.clear();
 }
 
-void RenderThread::addObject(Shape* obj)
+void RenderThread::addObject(Circle* obj)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_objects.push_back(obj);
 }
 
-void RenderThread::delObject(Shape* obj)
+void RenderThread::delObject(Circle* obj)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_objects.remove(obj);
     delete obj;
 }
 
-std::list<Shape *> *RenderThread::lockData()
+std::list<Circle *> *RenderThread::lockData()
 {
-    //qDebug("lock data");
     m_mutex.lock();
     return &m_objects;
 }
 
 void RenderThread::unlockData()
 {
-    //qDebug("unlock data");
     m_mutex.unlock();
 }
-
-Shape *RenderThread::hitTest(QPoint point, bool bLock)
+// todo : optimize by hittesting only grid cell elements
+Circle *RenderThread::hitTest(QPoint point, bool bLock)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
     for(obj_it iterator = m_objects.begin(); iterator != m_objects.end(); iterator++)
     {
-        Shape* obj = *iterator;
+        Circle* obj = *iterator;
         if(obj->hitTest(point.x(), point.y()))
         {
             if(bLock)
@@ -77,104 +82,50 @@ Shape *RenderThread::hitTest(QPoint point, bool bLock)
             return obj;
         }
     }
-    return BAD_ID;
+    return NULL;
 }
-
+// No Qt in run function, only QThread wrapper
 void RenderThread::run()
 {
-    qDebug("thread runing");
-
     while(!m_abort.load())
     {
-        //qDebug() << "wait" ;
         auto t0 = getTickCount();
 
         m_mutex.lock();
-
-       // qDebug() << "Calculate start" ;
         applyForces();
-        //qDebug() << "Calculate stop" ;
-
         m_mutex.unlock();
-        //qDebug() << "Calculate stop2" ;
+
         m_calcTime = getTickCount() - t0;
 
         msleep(1);
-
     }
-    qDebug("thread exit");
 }
 
 void RenderThread::applyForces()
 {
     // calculate forces
-
     for(obj_it iterator = m_objects.begin(); iterator != m_objects.end(); iterator++)
     {
-        // iterator->first = key
-        //m_mutex.lock();
-        Shape* obj = *iterator;
-        if(!obj->isLocked())
+        Circle* obj = *iterator;
+        if(!obj->isLocked())     // check if object captured by mouse
             calculateForce(obj);
-
-        //collision(obj);
-        //m_mutex.unlock();
- //       msleep(500);
-
-//        m_mutex.lock();
-//        obj->applyForce();
-//        m_mutex.unlock();
-//        msleep(500);
     }
 
     // apply forces
-    for(obj_it iterator = m_objects.begin(); iterator != m_objects.end(); iterator++)
+    for(Circle* obj : m_objects)
     {
-        // iterator->first = key
-        Shape* obj = *iterator;
-
-/*
-        // collision
-        for(obj_it iterator2 = m_objects.begin(); iterator2 != m_objects.end(); iterator2++)
-        {
-            // iterator->first = key
-            Shape* obj2 = iterator2->second;
-            if(obj == obj2)
-                continue;
-
-            double Fx = obj->forceX();
-            double Fy = obj->forceY();
-
-            int dx = obj2->centerX() - obj->centerX()+Fx;
-            int dy = obj2->centerY() - obj->centerY()+Fy ;
-            int r_c = std::sqrt(dx*dx+dy*dy);
-
-            if( r_c < 2*20 )
-            {
-                double factor = (r - 2*20)/r;
-                Fx *= factor;
-                Fy *= factor;
-            }
-        }
-*/
-                //m_mutex.lock();
-                obj->applyForce();
-                //m_mutex.unlock();
-            //    msleep(500);
+        obj->applyForce();
     }
 }
 
-void RenderThread::calculateForce(Shape* obj)
+void RenderThread::calculateForce(Circle* obj)
 {
-    int F = 0; // resulting force
-    double Fx = 0;
-    double Fy = 0;
-    int A = 0; // resulting angle
+    double Fx = 0.0;
+    double Fy = 0.0;
 
     for(obj_it iterator = m_objects.begin(); iterator != m_objects.end(); iterator++)
     {
-        // iterator->first = key
-        Shape* obj2 = *iterator;
+        Circle* obj2 = *iterator;
         if(obj == obj2)
             continue;
 
@@ -183,70 +134,26 @@ void RenderThread::calculateForce(Shape* obj)
         int dy = obj2->centerY() - obj->centerY();
         double r_c = std::sqrt(dx*dx+dy*dy);
 
-        double r = (r_c - 2*20)/20;
+        double r = (r_c - obj2->radius() - obj->radius()) / m_scale;
 
-        if(r < 0.2) r = 0.2;
-        double Fcur = 0.1;
-        //if(r>0.2)
+        // limit negative force
+        if(r < 0.2)
+            r = 0.2;
+
+        // get "force"
+        double F = 1.0/r - 1.0/(r*r);
+
+        // get offsets by proportional triangles rule
+        if(r_c!=0)
         {
-            //qDebug() << "dx,dy,r: " << dx << dy << r ;
-
-            // get force
-            Fcur = 1.0/r - 1.0/(r*r);
-
-
-        }
-        //else
-        {
-            //obj->lock(true);
-            //obj2->lock(true);
-        }
-        double X = 0.0;
-        double Y = 0.0;
-
-        if((dx!=0)||(dy!=0))
-        {
-
-
-        // get offset
-        double factor = (Fcur*1 / (r_c));//
-        Fx += factor * dx;
-        Fy += factor * dy;
-        //qDebug() << "Force: " << obj << r << Fcur << factor << Fx << Fy ;
+            double factor = F * m_speed / r_c;
+            Fx += factor * dx;
+            Fy += factor * dy;
+            //qDebug() << "Force: " << obj << r << F << factor << Fx << Fy ;
         }
 
     }
-//qDebug() << "Force: " << obj << Fx << Fy ;
-    obj->setForce(Fx, Fy, 0);
-}
-
-void RenderThread::collision(Shape* obj)
-{
-    // collision
-    for(obj_it iterator2 = m_objects.begin(); iterator2 != m_objects.end(); iterator2++)
-    {
-        // iterator->first = key
-        Shape* obj2 = *iterator2;
-        if(obj == obj2)
-            continue;
-
-        double Fx = obj->forceX();
-        double Fy = obj->forceY();
-        double Fr = std::sqrt(Fx*Fx+Fy*Fy);
-
-        int dx = obj2->centerX() - obj->centerX();
-        int dy = obj2->centerY() - obj->centerY();
-        int r_c = std::sqrt(dx*dx+dy*dy);
-
-        if( Fr > r_c - 2*20 )
-        {
-            Fr = r_c - 2*20;
-            double factor = Fr/r_c;
-            Fx = factor * dx;
-            Fy = factor * dy;
-            obj->setForce(Fx, Fy, 0);
-        }
-    }
+    obj->setForce(Fx, Fy);
 }
 
 // no Qt in the thread, so use this
@@ -254,4 +161,18 @@ unsigned long long RenderThread::getTickCount()
 {
     using namespace std::chrono;
     return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
+void RenderThread::setScale(int scale)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if(scale < 1) m_scale = 1;
+    else if(scale > 400) m_scale = 400;
+    else m_scale = scale;
+}
+
+void RenderThread::setSpeed(double speed)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_speed = speed;
 }

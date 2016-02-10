@@ -1,27 +1,7 @@
-#include "shape.h"
+#include "circle.h"
 #include <QtMath>
 
-QRect Shape::rect = QRect();
-
-Shape::Shape()
-{
-    m_locked = false;
-}
-
-Shape::~Shape()
-{
-
-}
-
-void Shape::lock(bool bLock)
-{
-    m_locked = bLock;
-}
-
-bool Shape::isLocked()
-{
-    return m_locked;
-}
+QRect Circle::rect = QRect();
 
 Circle::Circle(int pt_x, int pt_y) :
     x(pt_x),
@@ -29,6 +9,8 @@ Circle::Circle(int pt_x, int pt_y) :
 {
     x_force = 0.0;
     y_force = 0.0;
+
+    m_locked = false;
 }
 
 Circle::~Circle()
@@ -36,32 +18,34 @@ Circle::~Circle()
 
 }
 
+void Circle::lock(bool bLock)
+{
+    m_locked = bLock;
+}
+
+bool Circle::isLocked()
+{
+    return m_locked;
+}
 
 bool Circle::hitTest(int hit_x, int hit_y)
 {
     if (((hit_x - x) * (hit_x - x) + (hit_y - y) * (hit_y - y)) < r * r)
     {
-        // Точка принадлежит окружности
-        return true;
+        return true; // point inside
     }
     else if (((hit_x - x) * (hit_x - x) + (hit_y - y) * (hit_y - y)) == r * r)
     {
-        // Точка лежит на окружности
-        return true;
-    }
-    else
-    {
-        // Точка не принадлежит окружности
+        return true;// point on the border
     }
 
-    return false;
+    return false; //point outside
 }
 
-void Circle::setForce(double to_x, double to_y, int f)
+void Circle::setForce(double to_x, double to_y)
 {
     x_force = to_x;
     y_force = to_y;
-    f_force = f;
 }
 
 void Circle::applyForce()
@@ -77,17 +61,19 @@ void Circle::applyForce()
 
 void Circle::draw(QPainter * painter)
 {
-    QPen g_pen(QColor(0, 0, 0, 0));
-        g_pen.setWidth(0);
-        QRadialGradient grad(x, y, 40/2, x+5, y+5); // Create Gradient
-        grad.setColorAt(1, QColor(30, 30, 30)); // Black, varying alpha
-        grad.setColorAt(0, QColor(255, 255, 250)); // Black, completely transparent
-        QBrush g_brush(grad); // Gradient QBrush
-        painter->setPen(g_pen);
-        painter->setBrush(g_brush);
+    QPen pen(QColor(0, 0, 0, 0));
+    pen.setWidth(0);
+
+    QRadialGradient grad(x, y, r, x+r/4, y+r/4); // create gradient
+    grad.setColorAt(1, QColor(30, 30, 30));
+    grad.setColorAt(0, QColor(255, 255, 250));
+
+    QBrush brush(grad); // gradient QBrush
+
+    painter->setPen(pen);
+    painter->setBrush(brush);
 
     painter->drawEllipse(x-r, y-r, r*2, r*2);
-    //painter->drawText(x-r/2, y+r/2, m_name);
     //painter->drawEllipse(x-r/2+x_force, y-r/2+y_force, r, r); // next step
 }
 
@@ -95,12 +81,12 @@ void Circle::dragStart(QPoint pos)
 {
     m_dragOffset = pos - QPoint(x, y);
 }
-// TODO : adjust by screen rect
+
 void Circle::dragMove(QPoint pos)
 {
     x = pos.x() - m_dragOffset.x();
     y = pos.y() - m_dragOffset.y();
-
+    // adjust by screen rect
     adjustPos();
 }
 
