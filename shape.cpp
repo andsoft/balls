@@ -23,10 +23,9 @@ bool Shape::isLocked()
     return m_locked;
 }
 
-Circle::Circle(int pt_x, int pt_y, QString name) :
+Circle::Circle(int pt_x, int pt_y) :
     x(pt_x),
-    y(pt_y),
-    m_name(name)
+    y(pt_y)
 {
     x_force = 0.0;
     y_force = 0.0;

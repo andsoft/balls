@@ -38,7 +38,7 @@ private:
 class Circle : public Shape
 {
 public:
-    Circle(int x, int y, QString name);
+    Circle(int x, int y);
     virtual ~Circle();
 
     virtual bool hitTest(int hit_x, int hit_y);

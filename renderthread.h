@@ -6,10 +6,11 @@
 #include <QThread>
 #include <map>
 #include <mutex>
+#include <atomic>
 
 #define BAD_ID 0
 
-typedef std::map<quint64, Shape*>::iterator obj_it;
+typedef std::list<Shape*>::iterator obj_it;
 
 class RenderThread : public QThread
 {
@@ -21,16 +22,17 @@ public:
     void startProcess();
     void stopProcess();
 
+    unsigned long long getCalcTime() { return m_calcTime.load(); }
+
     // public interface for interacting with the "world"
     void removeAllObjects();
     void addObject(Shape* obj);
-    void delObject(quint64 objId);
-    Shape* getObject(quint64 objId);
+    void delObject(Shape* obj);
 
-    std::map<quint64, Shape*> * lockData();
+    std::list<Shape*> * lockData();
     void unlockData();
 
-    quint64 hitTest(QPoint point, bool bLock = false);
+    Shape* hitTest(QPoint point, bool bLock = false);
 
 signals:
 
@@ -43,12 +45,15 @@ protected:
     void calculateForce(Shape* obj);
     void collision(Shape* obj);
 
-private:
-    std::map<quint64, Shape*> m_objects;
-    quint64 m_nextId;
-    bool m_abort;
+    unsigned long long getTickCount();
 
+private:
+    std::list<Shape*> m_objects;
+
+    std::atomic<bool>  m_abort;
     std::mutex m_mutex;
+
+    std::atomic<unsigned long long> m_calcTime;
 };
 
 #endif // RENDERTHREAD_H

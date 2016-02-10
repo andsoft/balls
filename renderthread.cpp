@@ -4,67 +4,53 @@
 
 RenderThread::RenderThread(QObject *parent) : QThread(parent)
 {
-    m_nextId = 1;
     m_abort = false;
+    m_calcTime = 0;
 }
 
 RenderThread::~RenderThread()
 {
     stopProcess();
+    removeAllObjects();
 }
 
 void RenderThread::startProcess()
 {
     qDebug("execution starting ");
-
-    m_mutex.lock();
-    m_abort = false;
-    m_mutex.unlock();
+    m_abort.store(false);
     start();
 }
 
 void RenderThread::stopProcess()
 {
     qDebug("execution stoping ");
-
-    m_mutex.lock();
-    m_abort = true;
-    m_mutex.unlock();
+    m_abort.store(true);
     wait();
-
     qDebug("execution stoped ");
 }
 
 void RenderThread::removeAllObjects()
 {
-    m_mutex.lock();
-    m_objects.clear(); // TODO free memory
-    m_mutex.unlock();
+    std::lock_guard<std::mutex> lock(m_mutex);
+    for(Shape *obj : m_objects)
+        delete obj;
+    m_objects.clear();
 }
 
 void RenderThread::addObject(Shape* obj)
 {
-    qDebug("Add object");
-    m_mutex.lock();
-    m_objects.insert(std::pair<quint64, Shape*>(m_nextId++, obj));
-    m_mutex.unlock();
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_objects.push_back(obj);
 }
 
-void RenderThread::delObject(quint64 objId)
+void RenderThread::delObject(Shape* obj)
 {
-    m_mutex.lock();
-    m_objects.erase(objId); // TODO : free Shape* ??????
-    m_mutex.unlock();
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_objects.remove(obj);
+    delete obj;
 }
 
-Shape* RenderThread::getObject(quint64 objId)
-{
-    //m_mutex.lock();
-    return m_objects.at(objId);
-    //m_mutex.unlock();
-}
-
-std::map<quint64, Shape*> * RenderThread::lockData()
+std::list<Shape *> *RenderThread::lockData()
 {
     //qDebug("lock data");
     m_mutex.lock();
@@ -77,19 +63,18 @@ void RenderThread::unlockData()
     m_mutex.unlock();
 }
 
-quint64 RenderThread::hitTest(QPoint point, bool bLock)
+Shape *RenderThread::hitTest(QPoint point, bool bLock)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
     for(obj_it iterator = m_objects.begin(); iterator != m_objects.end(); iterator++)
     {
-        quint64 key = iterator->first;
-        Shape* obj = iterator->second;
+        Shape* obj = *iterator;
         if(obj->hitTest(point.x(), point.y()))
         {
             if(bLock)
                 obj->lock(true);
-            return key;
+            return obj;
         }
     }
     return BAD_ID;
@@ -99,15 +84,21 @@ void RenderThread::run()
 {
     qDebug("thread runing");
 
-    while(!m_abort)
+    while(!m_abort.load())
     {
         //qDebug() << "wait" ;
-        //m_mutex.lock();
+        auto t0 = getTickCount();
+
+        m_mutex.lock();
+
        // qDebug() << "Calculate start" ;
         applyForces();
         //qDebug() << "Calculate stop" ;
-        //m_mutex.unlock();
+
+        m_mutex.unlock();
         //qDebug() << "Calculate stop2" ;
+        m_calcTime = getTickCount() - t0;
+
         msleep(1);
 
     }
@@ -117,16 +108,17 @@ void RenderThread::run()
 void RenderThread::applyForces()
 {
     // calculate forces
+
     for(obj_it iterator = m_objects.begin(); iterator != m_objects.end(); iterator++)
     {
         // iterator->first = key
-        m_mutex.lock();
-        Shape* obj = iterator->second;
+        //m_mutex.lock();
+        Shape* obj = *iterator;
         if(!obj->isLocked())
             calculateForce(obj);
 
         //collision(obj);
-        m_mutex.unlock();
+        //m_mutex.unlock();
  //       msleep(500);
 
 //        m_mutex.lock();
@@ -139,7 +131,7 @@ void RenderThread::applyForces()
     for(obj_it iterator = m_objects.begin(); iterator != m_objects.end(); iterator++)
     {
         // iterator->first = key
-        Shape* obj = iterator->second;
+        Shape* obj = *iterator;
 
 /*
         // collision
@@ -165,9 +157,9 @@ void RenderThread::applyForces()
             }
         }
 */
-                m_mutex.lock();
+                //m_mutex.lock();
                 obj->applyForce();
-                m_mutex.unlock();
+                //m_mutex.unlock();
             //    msleep(500);
     }
 }
@@ -182,7 +174,7 @@ void RenderThread::calculateForce(Shape* obj)
     for(obj_it iterator = m_objects.begin(); iterator != m_objects.end(); iterator++)
     {
         // iterator->first = key
-        Shape* obj2 = iterator->second;
+        Shape* obj2 = *iterator;
         if(obj == obj2)
             continue;
 
@@ -234,7 +226,7 @@ void RenderThread::collision(Shape* obj)
     for(obj_it iterator2 = m_objects.begin(); iterator2 != m_objects.end(); iterator2++)
     {
         // iterator->first = key
-        Shape* obj2 = iterator2->second;
+        Shape* obj2 = *iterator2;
         if(obj == obj2)
             continue;
 
@@ -255,4 +247,11 @@ void RenderThread::collision(Shape* obj)
             obj->setForce(Fx, Fy, 0);
         }
     }
+}
+
+// no Qt in the thread, so use this
+unsigned long long RenderThread::getTickCount()
+{
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 }

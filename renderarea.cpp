@@ -45,12 +45,12 @@ void RenderArea::paintEvent(QPaintEvent *event)
     painter.save();
     //painter.fillRect(rect(), Qt::gray);
 
-    std::map<quint64, Shape*> *objects = m_renderer->lockData();
+
+    std::list<Shape*> *objects = m_renderer->lockData();
     int count = objects->size();
     for(obj_it iterator = objects->begin(); iterator != objects->end(); iterator++)
     {
-        //quint64 key = iterator->first;
-        Shape* obj = iterator->second;
+        Shape* obj = *iterator;
         obj->draw(&painter);
     }
     m_renderer->unlockData();
@@ -67,9 +67,9 @@ void RenderArea::paintEvent(QPaintEvent *event)
     painter.restore();
     painter.setFont(QFont("Courier", 14));
     painter.drawText(30, 30,
-                     QString("Count: %1  ").arg(count) +
-                     QString("FPS: %1").arg(FPS) +
-                     QString("  Author: ANDREEV A.A."));
+                     QString("Count: %1,  ").arg(count) +
+                     QString("FPS: %1, ").arg(FPS) +
+                     QString("Calculation: %1 ms").arg(m_renderer->getCalcTime()));
 
     painter.end();
 }
@@ -88,31 +88,29 @@ void RenderArea::mousePressEvent(QMouseEvent * event)
 {
     if(event->button() == Qt::LeftButton)
     {
-        quint64 obj_id = m_renderer->hitTest(event->pos(), true);
+        m_pDragShape = m_renderer->hitTest(event->pos(), true);
 
         // todo : optimize by hittesting only grid cell elements
-        if( obj_id != BAD_ID )
+        if( m_pDragShape )
         {
             // start dragging
-            m_pDragShape = m_renderer->getObject(obj_id);
             m_pDragShape->dragStart(event->pos());
             return;
         }
     }
     else if(event->button() == Qt::RightButton && m_pDragShape == NULL)
     {
-        quint64 obj_id = m_renderer->hitTest(event->pos());
+        Shape* obj = m_renderer->hitTest(event->pos());
 
         // todo : optimize by hittesting only grid cell elements
-        if( obj_id != BAD_ID )
+        if( obj )
         {
-            m_renderer->delObject(obj_id);
-            //repaint();
+            m_renderer->delObject(obj);
             return;
         }
 
 
-        m_renderer->addObject(new Circle(event->pos().x(), event->pos().y(), QString("%1").arg(1)) );
+        m_renderer->addObject(new Circle(event->pos().x(), event->pos().y()) );
     }
 
     //repaint();

@@ -39,7 +39,7 @@ void MainWindow::addObjects(int N)
 {
     for(int i=0; i<N; i++)
     {
-        m_renderer->addObject(new Circle(randInt(300,1000)/*200+50*i*/, 200+50*i, ""));
+        m_renderer->addObject(new Circle(randInt(300,1000)/*200+50*i*/, 200+50*i));
     }
 }
 
