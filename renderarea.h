@@ -28,16 +28,20 @@ protected:
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
 
+public:
+    int m_radius;
+
 private:
     RenderThread *m_renderer;
     QList<Circle*> m_Circles;
-    int elapsed;
 
     Circle* m_pDragCircle;
 
     int FPS;
     QElapsedTimer m_fps_timer;
     int m_fps_cnt;
+
+
 };
 
 #endif // RENDERAREA_H

@@ -25,6 +25,7 @@ protected:
 
 protected:
     RenderThread *m_renderer;
+    RenderArea *m_wnd;
 
 private slots:
     void on_actionClear_triggered();
@@ -36,6 +37,8 @@ private slots:
     void on_slider_Speed_valueChanged(int value);
 
     void on_slider_Scale_valueChanged(int value);
+
+    void on_slider_Radius_valueChanged(int value);
 
 private:
     Ui::MainWindow *ui;

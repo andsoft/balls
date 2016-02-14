@@ -3,12 +3,13 @@
 
 QRect Circle::rect = QRect();
 
-Circle::Circle(int pt_x, int pt_y) :
+Circle::Circle(int pt_x, int pt_y, int radius) :
     x(pt_x),
-    y(pt_y)
+    y(pt_y),
+    r(radius)
 {
-    x_force = 0.0;
-    y_force = 0.0;
+    x_speed = 0.0;
+    y_speed = 0.0;
 
     m_locked = false;
 }
@@ -23,12 +24,12 @@ void Circle::lock(bool bLock)
     m_locked = bLock;
 }
 
-bool Circle::isLocked()
+bool Circle::isLocked() const
 {
     return m_locked;
 }
 
-bool Circle::hitTest(int hit_x, int hit_y)
+bool Circle::hitTest(double hit_x, double hit_y)
 {
     if (((hit_x - x) * (hit_x - x) + (hit_y - y) * (hit_y - y)) < r * r)
     {
@@ -44,17 +45,14 @@ bool Circle::hitTest(int hit_x, int hit_y)
 
 void Circle::setForce(double to_x, double to_y)
 {
-    x_force = to_x;
-    y_force = to_y;
+    x_speed += to_x;
+    y_speed += to_y;
 }
 
 void Circle::applyForce()
 {
-    x += x_force;
-    y += y_force;
-
-    x_force = 0.0;
-    y_force = 0.0;
+    x += x_speed;
+    y += y_speed;
 
     adjustPos();
 }
@@ -79,6 +77,8 @@ void Circle::draw(QPainter * painter)
 
 void Circle::dragStart(QPoint pos)
 {
+    x_speed = 0;
+    y_speed = 0;
     m_dragOffset = pos - QPoint(x, y);
 }
 
@@ -97,6 +97,12 @@ void Circle::dragStop(QPoint pos)
 
 void Circle::adjustPos()
 {
+    return;
+    if(!rect.adjusted(20,20,20,20).contains(x,y))
+    {
+    x_speed = 0;
+    y_speed = 0;
+    }
     if(x < r) x = r;
     if(y < r) y = r;
     if(x > rect.width() - r) x = rect.width() - r;

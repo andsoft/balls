@@ -35,7 +35,7 @@ public:
 
     // customization
     void setScale(int scale);       // r-axis resolution in pixels
-    void setSpeed(double speed);    // speed
+    void setSpeed(double speed);    // speed coeff
 
 signals:
 
@@ -51,7 +51,7 @@ protected:
     unsigned long long getTickCount();
 
 private:
-    std::list<Circle*> m_objects;
+    std::list<Circle*> m_objects; // TODO : use unique_ptr list instead of raw pointers !!!
 
     std::atomic<bool>  m_abort;
     std::mutex m_mutex;

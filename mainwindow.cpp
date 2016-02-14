@@ -15,8 +15,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     m_renderer = new RenderThread(this);
 
-    RenderArea* wnd = new RenderArea(m_renderer, this);
-    setCentralWidget(wnd);
+    m_wnd = new RenderArea(m_renderer, this);
+    setCentralWidget(m_wnd);
+
+    on_slider_Speed_valueChanged(ui->slider_Speed->value());
+    on_slider_Scale_valueChanged(ui->slider_Scale->value());
+    on_slider_Radius_valueChanged(ui->slider_Radius->value());
 }
 
 MainWindow::~MainWindow()
@@ -29,8 +33,9 @@ void MainWindow::addObjects(int N)
     for(int i=0; i<N; i++)
     {
         QRect rect = centralWidget()->rect();
-        m_renderer->addObject(new Circle(randInt(20,rect.width()-20)/*200+50*i*/,
-                                         randInt(20,rect.height()-20)/*200+50*i*/));
+        m_renderer->addObject(new Circle(randInt(20,rect.width()-20),
+                                         randInt(20,rect.height()-20),
+                                         m_wnd->m_radius));
     }
 }
 
@@ -57,10 +62,19 @@ void MainWindow::on_actionAdd_100_triggered()
 void MainWindow::on_slider_Speed_valueChanged(int value)
 {
     double v = value;
-    m_renderer->setSpeed(v/50);
+    v /= 1000;
+    ui->label_speed->setText(QString::number(v, 'f', 3));
+    m_renderer->setSpeed(v);
 }
 
 void MainWindow::on_slider_Scale_valueChanged(int value)
 {
+    ui->label_scale->setText(QString::number(value));
     m_renderer->setScale(value);
+}
+
+void MainWindow::on_slider_Radius_valueChanged(int value)
+{
+    ui->label_radius->setText(QString::number(value));
+    m_wnd->m_radius = value;
 }

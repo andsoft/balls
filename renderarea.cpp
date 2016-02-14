@@ -6,8 +6,9 @@ RenderArea::RenderArea(RenderThread *renderer, QWidget *parent) : QWidget(parent
 {
     setMouseTracking(true);
 
+    m_radius = 10;
+
     m_renderer = renderer;
-    elapsed = 0;
     m_pDragCircle = NULL;
 
     FPS = 0;
@@ -18,7 +19,7 @@ RenderArea::RenderArea(RenderThread *renderer, QWidget *parent) : QWidget(parent
     timer->setTimerType(Qt::PreciseTimer);
     connect(timer, SIGNAL(timeout()), this, SLOT(repaint()));
 
-    timer->start(40);
+    timer->start(20);
 }
 
 void RenderArea::resizeEvent(QResizeEvent * event)
@@ -26,7 +27,7 @@ void RenderArea::resizeEvent(QResizeEvent * event)
     Circle::rect = QRect(0, 0, event->size().width(), event->size().height());
 }
 
-void RenderArea::paintEvent(QPaintEvent */*event*/)
+void RenderArea::paintEvent(QPaintEvent * /*event*/)
 {
     QPainter painter;
     painter.begin(this);
@@ -103,7 +104,7 @@ void RenderArea::mousePressEvent(QMouseEvent * event)
         }
 
 
-        m_renderer->addObject(new Circle(event->pos().x(), event->pos().y()) );
+        m_renderer->addObject(new Circle(event->pos().x(), event->pos().y(), m_radius) );
     }
 
     //repaint();

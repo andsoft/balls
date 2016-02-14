@@ -146,7 +146,7 @@ void RenderThread::calculateForce(Circle* obj)
         // get offsets by proportional triangles rule
         if(r_c!=0)
         {
-            double factor = F * m_speed / r_c;
+            double factor = ( m_speed * F / obj->mass() ) / r_c;
             Fx += factor * dx;
             Fy += factor * dy;
             //qDebug() << "Force: " << obj << r << F << factor << Fx << Fy ;

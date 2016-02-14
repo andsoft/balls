@@ -7,10 +7,10 @@
 class Circle
 {
 public:
-    Circle(int x, int y);
+    Circle(int x, int y, int radius = 20);
     virtual ~Circle();
 
-    virtual bool hitTest(int hit_x, int hit_y);
+    virtual bool hitTest(double hit_x, double hit_y);
     virtual void setForce(double to_x, double to_y);
     virtual void applyForce();
 
@@ -20,16 +20,17 @@ public:
     virtual void dragMove(QPoint pos);
     virtual void dragStop(QPoint pos);
 
-    int centerX() {return x;}
-    int centerY() {return y;}
+    double centerX() const {return x;}
+    double centerY() const {return y;}
 
-    int forceX() {return x_force;}
-    int forceY() {return y_force;}
+    double speedX() const {return x_speed;}
+    double speedY() const {return y_speed;}
 
-    int radius() { return r; }
+    int radius() const { return r; }
+    double mass() const { return 0.0003 * 4.0 * 3.14 * pow(r, 3)/3.0; } // use volume as mass criteria
 
     void lock(bool b);
-    bool isLocked();
+    bool isLocked() const ;
 
     static QRect rect; // bounding rect
 
@@ -40,11 +41,12 @@ private:
     double x; // center x
     double y; // center y
 
-    const int r = 20; // hardcoded radius
+    const int r; // radius
 
     QPoint m_dragOffset;
-    double x_force;
-    double y_force;
+
+    double x_speed;
+    double y_speed;
 
     bool m_locked;
 };
